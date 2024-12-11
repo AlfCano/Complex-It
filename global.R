@@ -503,3 +503,181 @@ genmc_state_space <- function(n, default_val){
   return(state_space)
 }
 
+
+
+
+
+create_nice_ggplot <- function(superclusters_object, current_som_solution_object){
+  
+  x_dim <- current_som_solution_object[["parameters"]][["the.grid"]][["dim"]][[1]]
+  y_dim <- current_som_solution_object[["parameters"]][["the.grid"]][["dim"]][[2]]
+  
+  # write the text to build the base plot
+  p <- 'ggplot() +
+  geom_blank() +
+  theme_minimal() +
+  theme(
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    axis.text = element_blank()
+  ) +
+  coord_fixed()'
+  
+  # Draw the outer grid
+  p <- paste(p,
+             paste0('+ scale_x_continuous(breaks = 1:',
+                    x_dim,
+                    ', expand = c(0, 0))',
+                    '+ scale_y_continuous(breaks = 1:',
+                    y_dim,
+                    ', expand = c(0, 0))'))
+  
+  
+  # Add colours for super cluster plots
+  
+  dims_coords <- expand.grid(1:y_dim, 1:x_dim) %>%
+    rename(y_coords = 1, x_coords = 2)
+  
+  dims_coords$super_cluster <- superclusters_object[["cluster"]]
+  
+  colour_palette <- data.frame(super_cluster = c(1:10),
+                               colours = c('red', 'blue', 'green',
+                                           'purple', 'orange', 'pink',
+                                           'cyan', 'brown', 'yellow',
+                                           'grey'))
+  
+  dims_coords <- left_join(dims_coords, colour_palette)
+  
+  dims_coords$quadrant <- 1:nrow(dims_coords)
+  
+  for(i in 1:nrow(dims_coords)){
+    
+    #in each iteration, add one annotate line 
+    #with info from the annotations dataframe
+    
+    xmax <- dims_coords[i, 2]
+    xmin <- xmax-1
+    
+    ymax <- dims_coords[i, 1]
+    ymin <- ymax-1
+    
+    colour <- dims_coords[i, 4]
+    
+    p <- paste(p,
+               paste0('+ annotate("rect", xmin = ',
+                      xmin,
+                      ', xmax = ',
+                      xmax,
+                      ', ymin = ',
+                      ymin,
+                      ', ymax = ',
+                      ymax,
+                      ', alpha = 0.5, fill = "', colour,
+                      '")'))
+    
+  }
+  
+  # Add vline and hline for separations
+  p <- paste(p,
+             paste0('+ geom_vline(xintercept = 0:',
+                    x_dim,
+                    ')',
+                    '+ geom_hline(yintercept = 0:',
+                    y_dim,
+                    ')'))
+  
+  
+  
+  # Add quadrant titles
+  for(i in 1:nrow(dims_coords)){
+    
+    xmax <- dims_coords[i, 2]
+    xmin <- xmax-1
+    
+    ymax <- dims_coords[i, 1]
+    ymin <- ymax-0.25
+    
+    quadrant_text <- paste0("'", paste0('Quadrant ', dims_coords[i, 5]), "'")
+    
+    p <- paste(p,
+               paste0("+geom_fit_text(aes(label=", quadrant_text, ",
+                       xmin=", xmin, ",
+                       xmax=", xmax, ",
+                       ymin=", ymin, ",
+                       ymax=", ymax, "),
+                   reflow=F, grow = T)"
+               )
+    )
+    
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  # Add vline and hline for separations
+  
+  
+  k_means_data <- data.frame(
+    k_means_cluster = names(current_som_solution_object[["clustering"]]),
+    quadrant = as.vector(current_som_solution_object[["clustering"]]),
+    stringsAsFactors = FALSE # Prevent conversion of strings to factors
+  )
+  
+  k_means_data$k_means_cluster <- sub(";.*", "", k_means_data$k_means_cluster)
+  
+  k_means_data <- k_means_data %>%
+    distinct() %>%
+    group_by(quadrant) %>%
+    summarise(k_means_cluster = paste(k_means_cluster, collapse = " "))
+  
+  # Add k-means clusters to grid
+  for(indiv_quadrant in unique(k_means_data$quadrant)){
+    
+    
+    indiv_kmeans_data <- k_means_data %>%
+      filter(quadrant == indiv_quadrant) %>%
+      select(k_means_cluster) %>%
+      as.character() %>%
+      strsplit(',') %>%
+      unlist()
+    
+    indiv_kmeans_data <- paste0("'", indiv_kmeans_data, "'")
+    
+    xmax <- dims_coords %>%
+      filter(quadrant == indiv_quadrant) %>%
+      select(x_coords) %>%
+      as.numeric() 
+    
+    xmin = xmax-1
+    
+    ymax <- dims_coords %>%
+      filter(quadrant == indiv_quadrant) %>%
+      select(y_coords) %>%
+      as.numeric() %>%
+      -0.25
+    
+    ymin <- ymax-0.75
+    
+    
+    p <- paste(p,
+               paste0("+geom_fit_text(aes(label=", indiv_kmeans_data, ",
+                      xmin=", xmin, ",
+                      xmax=", xmax, ",
+                      ymin=", ymin, ",
+                      ymax=", ymax, "),
+                  reflow=T, grow = F)"
+               )
+    )
+    
+  }
+  
+  
+  return(eval(parse( text=p )))
+  
+  
+}  

@@ -55,6 +55,7 @@ library(fresh)
 library(plotly)
 library(shinycssloaders)
 library(shinyBS)
+library(ggfittext)
 
 mytheme <- create_theme(
   adminlte_color(
@@ -498,8 +499,10 @@ ui <- dashboardPage(
                 column(3, 
                        
                        selectInput("somplottype", "Type of plot:", 
-                                   choices= c("color", "barplot", 
-                                              "names", "boxplot"))
+                                   choices= c('color',
+                                              'barplot',
+                                              'names',
+                                              'boxplot'))
                 ), 
                 
                 
@@ -509,7 +512,15 @@ ui <- dashboardPage(
                                                 input.somplottype == '3d'",
                                         selectInput("somplotvar", 
                                                     "Variable:", 
-                                                    choices= "(Not Available)"))
+                                                    choices= "(Not Available)")),
+                       
+                       conditionalPanel("input.somplottype == 'names'",
+                                        numericInput("names_SC_num", 
+                                                    "Number of superclusters:", 
+                                                    2,
+                                                    min = 2,
+                                                    max = 10,
+                                                    step = 1))
                        
                 ),
                 

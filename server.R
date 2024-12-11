@@ -54,6 +54,7 @@ library(DT)
 library(fresh)
 library(plotly)
 library(shinycssloaders)
+library(ggfittext)
 
 
 server <- function(input, output, session) {
@@ -486,11 +487,9 @@ server <- function(input, output, session) {
       
     })
     
-    
+
     
     output$som_3Dplot <- renderPlot({
-      
-      #browser()
       
       SOM_SC <- superClass(sommap=som_solution$current_som_solution, method='ward.D', k=input$som_3Dplot_superclusters)
       
@@ -500,8 +499,6 @@ server <- function(input, output, session) {
     
   
     output$som_3DMap <- renderPlot({
-      
-      #browser()
       
       SOM_SC <- superClass(sommap=som_solution$current_som_solution, method='ward.D', k=input$som_3DMap_superclusters)
       
@@ -618,7 +615,7 @@ server <- function(input, output, session) {
   # Plot the SOM
   somplot_output_plot <- reactive({
     
-    browser()
+    # browser
     
     tmp.view <- NULL
     if (input$somplottype =="boxplot") {
@@ -633,7 +630,7 @@ server <- function(input, output, session) {
     
     if(input$somplotwhat =='obs' & input$somplottype == 'boxplot'){ ggplotly(plot(x=som_solution$current_som_solution, what=input$somplotwhat, type=input$somplottype, variable = tmp.var, show.names = TRUE,names = paste("Quadrant ", 1:prod(temp.dim)))) }
     else if(input$somplotwhat =='obs' & input$somplottype == 'color'){plot(x=som_solution$current_som_solution, what=input$somplotwhat, type=input$somplottype, variable = tmp.var, show.names = TRUE,names = paste("Quadrant ", 1:prod(temp.dim))) }
-    else if(input$somplotwhat == 'obs' & input$somplottype == 'names'){plot(x=som_solution$current_som_solution, what=input$somplotwhat, type=input$somplottype, show.names = TRUE,names = paste("Quadrant ", 1:prod(temp.dim)))}
+    else if(input$somplotwhat == 'obs' & input$somplottype == 'names'){create_nice_ggplot(superClass(sommap=som_solution$current_som_solution, method='ward.D', k=input$names_SC_num), som_solution$current_som_solution)}
     else if(input$somplotwhat =='obs' & input$somplottype == 'barplot'){ggplotly(plot(x=som_solution$current_som_solution, what=input$somplotwhat, type=input$somplottype, show.names = TRUE,names = paste("Quadrant ", 1:prod(temp.dim))))}
     else if (input$somplotwhat == 'prototypes' & input$somplottype == 'barplot'){ggplotly(plot(x=som_solution$current_som_solution, what=input$somplotwhat, type=input$somplottype))}
     else if (input$somplotwhat == 'prototypes' & input$somplottype == '3d'){
